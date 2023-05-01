@@ -19,7 +19,7 @@ function onSearch() {
   fetchCountries(searchQuery)
     .then(countries => {
       clearMarkup();
-      if (countries > 10) {
+      if (countries.length > 10) {
         Notiflix.Notify.info(
           'Too many matches found. Please enter a more specific name.'
         );
@@ -54,7 +54,6 @@ function renderCountriesList(countries) {
   countriesList.innerHTML = listMarkup;
   countryInfo.innerHTML = '';
 }
-renderCountriesList('Ukraine');
 
 function renderCountryInfo(country) {
   const infoMarkup = `
