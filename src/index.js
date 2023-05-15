@@ -5,72 +5,72 @@ import { fetchCountries } from './fetchCountries';
 const DEBOUNCE_DELAY = 300;
 
 const searchBox = document.querySelector('#search-box');
-const countriesList = document.querySelector('.country-list');
+const countryList = document.querySelector('.country-list');
 const countryInfo = document.querySelector('.country-info');
 
-searchBox.addEventListener('input', debounce(onSearch, DEBOUNCE_DELAY));
-
-function onSearch() {
-  const searchQuery = searchBox.value.trim();
-  if (searchQuery === '') {
-    clearMarkup();
-    return;
-  }
-  fetchCountries(searchQuery)
-    .then(countries => {
-      clearMarkup();
-      if (countries.length > 10) {
-        Notiflix.Notify.info(
-          'Too many matches found. Please enter a more specific name.'
-        );
-      } else if (countries.length >= 2 && countries.length <= 10) {
-        renderCountriesList(countries);
-      } else if (countries.length === 1) {
-        renderCountryInfo(countries[0]);
-      }
-    })
-    .catch(error => {
-      Notiflix.Notify.failure('Oops, there is no country with that name');
-      console.log(error);
-    });
-}
 
 function clearMarkup() {
-  countriesList.innerHTML = '';
+  countryList.innerHTML = '';
   countryInfo.innerHTML = '';
 }
 
-function renderCountriesList(countries) {
-  const listMarkup = countries
-    .map(country => {
-      return `
-      <li class="country-item">
-        <img src="${country.flags.svg}" alt="${country.name.official} flag" class="country-flag">
-        <p class="country-name">${country.name.official}</p>
-      </li>
-    `;
-    })
-    .join('');
-  countriesList.innerHTML = listMarkup;
-  countryInfo.innerHTML = '';
+function renderCountryList(countries) {
+  if (countries.length > 10) {
+    Notiflix.Notify.warning('Too many matches found. Please enter a more specific name.');
+    return;
+  }
+
+  const markup = countries.map(country => `
+    <li class="country-item">
+      <img class="country-flag" src="${country.flags.svg}" alt="${country.name.official} flag" />
+      <span class="country-name">${country.name.official}</span>
+    </li>
+  `).join('');
+
+  countryList.innerHTML = `<ul class="country-list">${markup}</ul>`;
 }
 
 function renderCountryInfo(country) {
-  const infoMarkup = `
-    <div class="country-card">
-      <img src="${country.flags.svg}" alt="${
-    country.name.official
-  } flag" class="country-flag">
-      <h2 class="country-name">${country.name.official}</h2>
-      <p class="country-capital"><span>Capital:</span> ${country.capital}</p>
-      <p class="country-population"><span>Population:</span> ${
-        country.population
-      }</p>
-      <p class="country-languages"><span>Languages:</span> ${country.languages
-        .map(language => language.name)
-        .join(', ')}</p>
+  const { name, capital, population, languages, flags } = country;
+
+  const languageList = languages.map(lang => lang.name).join(', ');
+
+  const markup = `
+    <div class="country-info">
+      <img class="country-flag" src="${flags.svg}" alt="${name.official} flag" />
+      <h2 class="country-name">${name.official}</h2>
+      <p><span class="info-label">Capital:</span> ${capital}</p>
+      <p><span class="info-label">Population:</span> ${population}</p>
+      <p><span class="info-label">Languages:</span> ${languageList}</p>
     </div>
   `;
-  countryInfo.innerHTML = infoMarkup;
-  countriesList.innerHTML = '';
+
+  countryInfo.innerHTML = markup;
 }
+
+function handleSearchInput() {
+  const searchQuery = searchBox.value.trim();
+
+  if (!searchQuery) {
+    clearMarkup();
+    return;
+  }
+
+  fetchCountries(searchQuery)
+    .then(data => {
+      if (data.length === 0) {
+        Notiflix.Notify.warning('Oops, there is no country with that name.');
+        clearMarkup();
+      } else if (data.length === 1) {
+        renderCountryInfo(data[0]);
+      } else {
+        renderCountryList(data);
+      }
+    })
+    .catch(error => {
+      Notiflix.Notify.failure(error.message);
+      clearMarkup();
+    });
+}
+
+searchBox.addEventListener('input', debounce(handleSearchInput, 300));
